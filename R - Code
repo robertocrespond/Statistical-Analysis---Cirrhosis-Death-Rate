@@ -1,0 +1,84 @@
+alcohol <- read.table("~/alcohol.txt", quote="\"", comment.char="")
+colnames(alcohol) <- c("index","One","urbanPop","lateBirths","wineC","liquorC","cirrhosis")
+alcohol$index<-NULL
+alcohol$One<-NULL
+
+#plotting
+plot(alcohol$urbanPop,alcohol$cirrhosis)
+plot(alcohol$lateBirths,alcohol$cirrhosis)
+plot(alcohol$wineC,alcohol$cirrhosis)
+plot(alcohol$liquorC,alcohol$cirrhosis)
+
+#correlation
+install.packages("corrplot")
+library(corrplot)
+parameterM<-alcohol
+parameterM$cirrhosis<-NULL
+corD<-cor(parameterM)
+corrplot.mixed(corD)
+
+#Fitting
+M1<-lm(cirrhosis ~ urbanPop+lateBirths+wineC+liquorC,data=alcohol)
+SSE.m1<-sum(M1$residuals^2)
+
+
+#variableScreening(F-test)
+M2<-lm(cirrhosis ~ lateBirths+wineC,data=alcohol)
+SSE.m2<-sum(M2$residuals^2)
+((SSE.m2-SSE.m1)/2)/(SSE.m1/(46-5))
+pf(0.0932,2,41,lower.tail=F)
+
+#variableScreening(Automated)
+library(MASS)
+stepAIC(M1)
+
+#outliers
+which(abs(rstandard(M2))>3)
+
+#influentialObservations
+F_thresh<-qf(.5,3,43)
+which(cooks.distance(M2)>F_thresh)
+
+
+
+#ModelDIAGNOSIS
+
+plot(M2$fitted.values,M2$residuals)
+
+#NormalAssump
+
+#Histogram
+hist(M2$residuals,breaks=12)
+#Shapiro-WilkTest
+shapiro.test(M2$residuals)
+#NormalProbPlot
+qqnorm(M2$residuals)
+
+#IndependentAssump
+install.packages("lmtest")
+library(lmtest)
+dwtest(M2)
+
+#meanZeroAssump
+mean(M2$residuals)
+
+
+#conclusion
+
+#B_lateBirths
+t<-1.3656/.2858
+2*pt(t,43,lower.tail=F)
+	#95%CI
+1.3656+qt(.975,(46-(2+1)))*.2858
+	1.3656-qt(.975,(46-(2+1)))*.2858
+
+
+#B_wineC
+t2<-1.9723/.2909
+2*pt(t2,43,lower.tail=F)
+	#95%CI
+1.9723+qt(.975,(46-(2+1)))*.2909
+1.9723-qt(.975,(46-(2+1)))*.2909
+
+
+
